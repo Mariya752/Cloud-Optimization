@@ -1,0 +1,12 @@
+SELECT
+  name,
+  SUBSTRING(ts FROM 1 FOR 10) AS date,
+  AVG(volatility) AS avg_volatility,
+  MAX(volatility) AS max_volatility,
+  MIN(volatility) AS min_volatility
+FROM
+  "AwsDataCatalog"."database-project"."16"
+GROUP BY
+  name, SUBSTRING(ts FROM 1 FOR 10)
+ORDER BY
+  name, date;

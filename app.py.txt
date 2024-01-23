@@ -1,0 +1,40 @@
+import boto3
+import yfinance as yf
+import json
+from datetime import datetime
+from time import sleep
+
+# List of company symbols
+symbols = ['AMZN', 'BABA', 'WMT', 'EBAY', 'SHOP', 'TGT', 'BBY', 'HD', 'COST', 'KR']
+
+kinesis = boto3.client('kinesis', "us-east-2")
+
+for symbol in symbols:
+    data = yf.download(symbol, start='2023-12-04', end='2023-12-16', interval='5m')
+
+    # Process each data point and send to Kinesis
+    for index, row in data.iterrows():
+        ts = index.strftime('%Y-%m-%d %H:%M:%S')
+        high = row['High']
+        low = row['Low']
+        volatility = high - low
+
+        # Create a JSON object
+        record = {
+            'high': float(high),
+            'low': float(low),
+            'volatility': float(volatility),
+            'ts': ts,
+            'name': symbol
+        }
+
+        # Convert JSON to string
+        record_str = json.dumps(record)+'\n'
+
+        # Send the record to the Kinesis stream
+        kinesis.put_record(
+            StreamName='project-stream',
+            Data=record_str,
+            PartitionKey='partition_key'
+        )
+        sleep(0.05)
